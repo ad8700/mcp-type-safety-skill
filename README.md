@@ -88,6 +88,74 @@ User: Enable the MCP type safety skill
 Claude: Type safety validation is now active for all MCP tool calls.
 ```
 
+## Privacy First
+
+### Everything Stays in Claude
+
+This skill:
+- ✅ Runs entirely within your Claude conversation
+- ✅ Stores patterns only in current session memory
+- ✅ Forgets everything when the conversation ends
+- ✅ Never sends data to external servers
+- ✅ No telemetry, analytics, or tracking
+
+### What This Skill Sees vs What We See
+
+**What the skill sees** (in your session only):
+- Type mismatches you encounter
+- Patterns in your MCP usage
+- Tools you're calling
+
+**What we see**:
+- Absolutely nothing
+- Zero telemetry
+- No usage statistics
+- Only what you choose to share via GitHub issues
+
+### Session-Only Tracking
+
+When the skill shows:
+```
+📊 Type Safety Report
+━━━━━━━━━━━━━━━━━━━━━
+MCP Calls Made:     15
+Type Issues Found:   3
+```
+
+This data:
+- Lives only in your current Claude conversation
+- Disappears when you start a new chat
+- Never leaves your browser/app
+- Cannot be accessed by anyone else
+
+### For the Security Conscious
+```bash
+# This skill has no external dependencies
+# No npm packages that phone home
+# No Python libraries with telemetry
+# Just local validation logic
+
+# Verify yourself - check the code:
+cat validator.py | grep -i "request\|http\|telemetry"
+# (Should return nothing)
+```
+
+### Open Source Accountability
+
+Every line of code is visible at [github.com/ad8700/mcp-type-safety-skill](https://github.com/ad8700/mcp-type-safety-skill)
+
+Found something concerning? Open an issue immediately. Security and privacy are paramount.
+
+### Enterprise Deployment
+
+For organizations with compliance requirements:
+- Review the code (it's concise and readable)
+- Host your own fork if needed
+- Modify to meet your policies
+- No external dependencies to audit
+
+Your API schemas, type patterns, and tool usage remain entirely within your control.
+
 ## Usage
 
 ### Automatic Validation
