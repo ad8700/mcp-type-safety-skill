@@ -159,10 +159,15 @@ The `skill.json` file provides machine-readable metadata:
 
 ### Cross-Platform Install Script
 
-The `install.sh` script detects the OS and installs to the appropriate location:
+The `install.sh` script supports custom directories and OS auto-detection:
 
 ```bash
-# OS Detection
+# Usage
+./install.sh                    # Auto-detect OS default
+./install.sh ~/my-skills        # Custom directory
+./install.sh --help             # Show usage
+
+# OS Detection (fallback when no argument provided)
 if [[ "$OSTYPE" == "darwin"* ]]; then
     SKILL_DIR="$HOME/Documents/Claude/skills"
 elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
@@ -172,7 +177,31 @@ else
 fi
 ```
 
-**Note**: On Windows with Git Bash/MINGW64, `$OSTYPE` is `msys`.
+**Notes**:
+- On Windows with Git Bash/MINGW64, `$OSTYPE` is `msys`
+- Uses `set -e` for error handling (exits on first failure)
+- Uses `git clone --quiet` for cleaner output
+
+### Testing the Install Script
+
+```bash
+# Test help
+./install.sh --help
+
+# Test with temp directory
+./install.sh /tmp/test-skill-install
+
+# Verify files
+ls -la /tmp/test-skill-install/mcp-type-safety-skill/
+
+# Clean up
+rm -rf /tmp/test-skill-install
+```
+
+**Expected files after install:**
+- SKILL.md, validator.py, patterns.json, skill.json
+- README.md, CLAUDE.md, LICENSE, install.sh
+- examples/demo.md
 
 ### Validator Design Decisions
 
