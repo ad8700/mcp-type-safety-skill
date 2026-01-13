@@ -125,3 +125,84 @@ python -m pytest test_validator.py -v
 ## Related Projects
 
 - [MCP Universal Protocol](https://github.com/ad8700/mcp-universal-protocol) - Full proxy-based type validation for all MCP traffic (not just Claude)
+
+## Implementation Notes
+
+### Skill vs MCP UP Proxy
+
+| Feature | This Skill | MCP UP Proxy |
+|---------|-----------|--------------|
+| Scope | Claude only | All MCP traffic |
+| Validation | Pre-call | Pre and post-call |
+| Metrics | Session only | Persistent |
+| Enforcement | Advisory | Can block |
+| Setup | Just enable | Deploy proxy |
+
+### skill.json Manifest Format
+
+The `skill.json` file provides machine-readable metadata:
+
+```json
+{
+  "name": "mcp-type-safety",
+  "version": "1.0.0",
+  "main": "SKILL.md",
+  "files": {
+    "skill_definition": "SKILL.md",
+    "validator": "validator.py",
+    "patterns": "patterns.json"
+  },
+  "capabilities": ["pre-call-validation", "auto-fix", "session-tracking"],
+  "commands": [{"name": "check types", "description": "..."}]
+}
+```
+
+### Cross-Platform Install Script
+
+The `install.sh` script detects the OS and installs to the appropriate location:
+
+```bash
+# OS Detection
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    SKILL_DIR="$HOME/Documents/Claude/skills"
+elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    SKILL_DIR="$USERPROFILE/Documents/Claude/skills"
+else
+    SKILL_DIR="$HOME/Documents/Claude/skills"
+fi
+```
+
+**Note**: On Windows with Git Bash/MINGW64, `$OSTYPE` is `msys`.
+
+### Validator Design Decisions
+
+1. **Severity Enum**: Uses Python Enum for type safety
+   - `VALID`, `WARNING`, `ERROR`, `SUGGESTION`
+
+2. **Dataclasses**: All data models use `@dataclass` for clean structure
+   - `ValidationResult`, `ValidationReport`, `SessionStats`
+
+3. **Field Pattern Inference**: When no schema provided, infers types from field names
+   - `*_id` → integer
+   - `*_at` → datetime
+   - `is_*` → boolean
+
+4. **Auto-Fix Priority**: Coercion is attempted in this order:
+   - String → Integer (for IDs)
+   - ISO-8601 → Unix timestamp (for dates)
+   - Boolean variants → native boolean
+
+### Origin and History
+
+This skill was extracted from `mcp-universal-protocol/skills/mcp-type-safety-skill/` into a standalone repository to:
+1. Allow independent installation
+2. Enable simpler contribution workflow
+3. Provide a focused, single-purpose package
+
+The validation logic in `validator.py` is derived from the MCP UP proxy's validation engine but simplified for skill-only use (no async, no network I/O).
+
+### Git Workflow
+
+- Main branch: `main`
+- Line endings: CRLF warnings are normal on Windows (configured in .gitattributes)
+- Repository: https://github.com/ad8700/mcp-type-safety-skill
