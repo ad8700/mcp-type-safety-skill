@@ -22,6 +22,27 @@ cd mcp-type-safety-skill
 ./install.sh
 ```
 
+### Custom Install Location
+
+```bash
+# Install to a custom skills directory
+./install.sh /path/to/your/skills
+
+# Examples
+./install.sh ~/my-claude-skills
+./install.sh ~/.claude/skills
+
+# Show help and default locations
+./install.sh --help
+```
+
+**Default locations by OS:**
+| OS | Default Path |
+|----|--------------|
+| macOS | `~/Documents/Claude/skills` |
+| Windows | `%USERPROFILE%/Documents/Claude/skills` |
+| Linux | `~/Documents/Claude/skills` |
+
 ### Manual Installation
 
 #### For Claude Desktop
