@@ -1,0 +1,306 @@
+{
+  "patterns": {
+    "timestamp_mismatch": {
+      "name": "Timestamp Format Mismatch",
+      "description": "Different systems use different timestamp formats",
+      "variants": [
+        {
+          "name": "unix_seconds",
+          "description": "Unix epoch in seconds",
+          "detection": "Integer between 1000000000 and 2500000000",
+          "example": 1704067200,
+          "systems": ["CloudWatch", "Unix", "Redis"]
+        },
+        {
+          "name": "unix_milliseconds",
+          "description": "Unix epoch in milliseconds",
+          "detection": "Integer between 1000000000000 and 2500000000000",
+          "example": 1704067200000,
+          "systems": ["JavaScript", "Stripe", "Elasticsearch"]
+        },
+        {
+          "name": "iso8601",
+          "description": "ISO-8601 formatted string",
+          "detection": "String matching YYYY-MM-DDTHH:MM:SS pattern",
+          "example": "2024-01-01T00:00:00Z",
+          "systems": ["PostgreSQL", "REST APIs", "JSON"]
+        },
+        {
+          "name": "iso8601_offset",
+          "description": "ISO-8601 with timezone offset",
+          "detection": "String matching YYYY-MM-DDTHH:MM:SS+HH:MM pattern",
+          "example": "2024-01-01T00:00:00+00:00",
+          "systems": ["Python datetime", "RFC 3339"]
+        }
+      ],
+      "fixes": {
+        "unix_seconds_to_iso8601": "datetime.fromtimestamp(value, tz=timezone.utc).isoformat() + 'Z'",
+        "unix_ms_to_iso8601": "datetime.fromtimestamp(value/1000, tz=timezone.utc).isoformat() + 'Z'",
+        "iso8601_to_unix_seconds": "int(datetime.fromisoformat(value.replace('Z', '+00:00')).timestamp())",
+        "iso8601_to_unix_ms": "int(datetime.fromisoformat(value.replace('Z', '+00:00')).timestamp() * 1000)"
+      },
+      "why_it_matters": "Timestamp mismatches can cause queries to return wrong time ranges, events to be logged at wrong times, or comparisons to fail silently."
+    },
+
+    "id_type_mismatch": {
+      "name": "ID Type Mismatch",
+      "description": "IDs passed as strings instead of integers or vice versa",
+      "variants": [
+        {
+          "name": "string_id",
+          "description": "ID as string",
+          "detection": "String containing only digits",
+          "example": "123",
+          "systems": ["REST APIs", "GraphQL", "MongoDB"]
+        },
+        {
+          "name": "integer_id",
+          "description": "ID as integer",
+          "detection": "Integer value",
+          "example": 123,
+          "systems": ["PostgreSQL", "MySQL", "SQLite"]
+        },
+        {
+          "name": "uuid",
+          "description": "UUID string",
+          "detection": "String matching UUID pattern",
+          "example": "550e8400-e29b-41d4-a716-446655440000",
+          "systems": ["PostgreSQL", "Cassandra", "Modern APIs"]
+        }
+      ],
+      "fixes": {
+        "string_to_int": "int(value)",
+        "int_to_string": "str(value)"
+      },
+      "why_it_matters": "Some databases perform implicit type conversion, but others will fail or return empty results when types don't match."
+    },
+
+    "amount_format": {
+      "name": "Amount/Currency Format",
+      "description": "Monetary amounts represented differently across systems",
+      "variants": [
+        {
+          "name": "decimal_dollars",
+          "description": "Amount as decimal number",
+          "detection": "Float with 2 decimal places",
+          "example": 15.99,
+          "systems": ["PostgreSQL", "Accounting APIs"]
+        },
+        {
+          "name": "cents_integer",
+          "description": "Amount as integer cents",
+          "detection": "Integer representing smallest currency unit",
+          "example": 1599,
+          "systems": ["Stripe", "Payment processors"]
+        },
+        {
+          "name": "cents_string",
+          "description": "Amount as string cents",
+          "detection": "String containing only digits",
+          "example": "1599",
+          "systems": ["Legacy systems", "CSV imports"]
+        }
+      ],
+      "fixes": {
+        "cents_to_dollars": "value / 100",
+        "dollars_to_cents": "int(value * 100)",
+        "string_cents_to_dollars": "int(value) / 100"
+      },
+      "why_it_matters": "Amount mismatches can cause charges of $15.99 to become $1599.00 or vice versa - a potentially costly error."
+    },
+
+    "boolean_variant": {
+      "name": "Boolean Representation",
+      "description": "Boolean values represented in different ways",
+      "variants": [
+        {
+          "name": "native_boolean",
+          "description": "Native true/false",
+          "detection": "Python bool type",
+          "example": true,
+          "systems": ["JSON", "Modern APIs"]
+        },
+        {
+          "name": "string_boolean",
+          "description": "String 'true'/'false'",
+          "detection": "String matching true/false pattern",
+          "example": "true",
+          "systems": ["Query strings", "Form data"]
+        },
+        {
+          "name": "integer_boolean",
+          "description": "Integer 1/0",
+          "detection": "Integer 0 or 1",
+          "example": 1,
+          "systems": ["MySQL", "SQLite", "C APIs"]
+        },
+        {
+          "name": "yes_no",
+          "description": "String 'yes'/'no'",
+          "detection": "String matching yes/no pattern",
+          "example": "yes",
+          "systems": ["Legacy systems", "User input"]
+        }
+      ],
+      "fixes": {
+        "string_to_bool": "value.lower() in ('true', '1', 'yes')",
+        "int_to_bool": "value != 0",
+        "bool_to_int": "1 if value else 0",
+        "bool_to_string": "'true' if value else 'false'"
+      },
+      "why_it_matters": "Boolean mismatches can cause features to be unexpectedly enabled or disabled, or conditional logic to behave incorrectly."
+    },
+
+    "null_handling": {
+      "name": "Null/Empty Value Handling",
+      "description": "Different representations of missing or empty values",
+      "variants": [
+        {
+          "name": "json_null",
+          "description": "JSON null value",
+          "detection": "Python None",
+          "example": null,
+          "systems": ["JSON", "REST APIs"]
+        },
+        {
+          "name": "empty_string",
+          "description": "Empty string",
+          "detection": "String with length 0",
+          "example": "",
+          "systems": ["Form data", "CSV"]
+        },
+        {
+          "name": "string_null",
+          "description": "String 'null'",
+          "detection": "String equal to 'null'",
+          "example": "null",
+          "systems": ["Serialization bugs", "String concatenation"]
+        },
+        {
+          "name": "undefined",
+          "description": "Missing/undefined",
+          "detection": "Key not present",
+          "example": "undefined",
+          "systems": ["JavaScript", "Optional fields"]
+        }
+      ],
+      "fixes": {
+        "empty_to_null": "None if value == '' else value",
+        "string_null_to_null": "None if value == 'null' else value",
+        "null_to_empty": "'' if value is None else value"
+      },
+      "why_it_matters": "Null handling differences can cause 'null' to be stored as a literal string, empty values to fail validation, or missing data to be treated as present."
+    }
+  },
+
+  "field_inference_rules": {
+    "integer_fields": [
+      {"pattern": ".*_id$", "confidence": 0.9},
+      {"pattern": ".*Id$", "confidence": 0.9},
+      {"pattern": "^id$", "confidence": 0.95},
+      {"pattern": ".*_count$", "confidence": 0.85},
+      {"pattern": ".*_total$", "confidence": 0.8},
+      {"pattern": ".*_num$", "confidence": 0.8},
+      {"pattern": "^count$", "confidence": 0.85},
+      {"pattern": "^total$", "confidence": 0.8},
+      {"pattern": "^page$", "confidence": 0.9},
+      {"pattern": "^limit$", "confidence": 0.9},
+      {"pattern": "^offset$", "confidence": 0.9}
+    ],
+    "datetime_fields": [
+      {"pattern": ".*_at$", "confidence": 0.95},
+      {"pattern": ".*_time$", "confidence": 0.9},
+      {"pattern": ".*timestamp.*", "confidence": 0.95},
+      {"pattern": "^created$", "confidence": 0.8},
+      {"pattern": "^updated$", "confidence": 0.8},
+      {"pattern": "^deleted$", "confidence": 0.8},
+      {"pattern": ".*_date$", "confidence": 0.85},
+      {"pattern": "^date$", "confidence": 0.7}
+    ],
+    "number_fields": [
+      {"pattern": ".*amount.*", "confidence": 0.9},
+      {"pattern": ".*price.*", "confidence": 0.95},
+      {"pattern": ".*cost.*", "confidence": 0.9},
+      {"pattern": ".*_rate$", "confidence": 0.85},
+      {"pattern": ".*_percent.*", "confidence": 0.9},
+      {"pattern": ".*_ratio.*", "confidence": 0.85},
+      {"pattern": "^total$", "confidence": 0.6},
+      {"pattern": ".*_fee$", "confidence": 0.9}
+    ],
+    "boolean_fields": [
+      {"pattern": "^is_.*", "confidence": 0.95},
+      {"pattern": "^has_.*", "confidence": 0.95},
+      {"pattern": "^can_.*", "confidence": 0.9},
+      {"pattern": "^should_.*", "confidence": 0.9},
+      {"pattern": ".*_enabled$", "confidence": 0.95},
+      {"pattern": ".*_active$", "confidence": 0.9},
+      {"pattern": ".*_flag$", "confidence": 0.85},
+      {"pattern": "^enabled$", "confidence": 0.9},
+      {"pattern": "^active$", "confidence": 0.85},
+      {"pattern": "^verified$", "confidence": 0.85}
+    ],
+    "string_fields": [
+      {"pattern": ".*_name$", "confidence": 0.9},
+      {"pattern": "^name$", "confidence": 0.95},
+      {"pattern": ".*_email$", "confidence": 0.95},
+      {"pattern": "^email$", "confidence": 0.95},
+      {"pattern": ".*_url$", "confidence": 0.95},
+      {"pattern": "^url$", "confidence": 0.95},
+      {"pattern": ".*_path$", "confidence": 0.9},
+      {"pattern": "^description$", "confidence": 0.95},
+      {"pattern": "^title$", "confidence": 0.95}
+    ]
+  },
+
+  "common_mismatches": [
+    {
+      "scenario": "CloudWatch to PostgreSQL",
+      "issue": "CloudWatch returns Unix timestamps, PostgreSQL expects ISO-8601",
+      "example": {
+        "cloudwatch_response": {"timestamp": 1704067200},
+        "postgres_expected": {"timestamp": "2024-01-01T00:00:00Z"}
+      }
+    },
+    {
+      "scenario": "Stripe to Accounting System",
+      "issue": "Stripe uses cents as integers, accounting expects decimal dollars",
+      "example": {
+        "stripe_response": {"amount": 1599},
+        "accounting_expected": {"amount": 15.99}
+      }
+    },
+    {
+      "scenario": "REST API to SQL Database",
+      "issue": "REST API returns string IDs, database expects integers",
+      "example": {
+        "api_response": {"user_id": "123"},
+        "database_expected": {"user_id": 123}
+      }
+    },
+    {
+      "scenario": "Form submission to API",
+      "issue": "HTML forms submit booleans as strings",
+      "example": {
+        "form_data": {"is_active": "true"},
+        "api_expected": {"is_active": true}
+      }
+    }
+  ],
+
+  "error_messages": {
+    "templates": {
+      "type_mismatch": "The server expects {expected} for '{field}', but got {actual} ({value}). {suggestion}",
+      "coercible": "Converting '{field}' from {actual} to {expected}: {value} → {fixed}",
+      "critical": "Cannot convert '{field}' to {expected}. Value '{value}' is not a valid {expected}.",
+      "missing_required": "Required field '{field}' is missing. The server expects a {expected} value.",
+      "unknown_field": "Field '{field}' is not in the schema and may be ignored by the server."
+    },
+    "suggestions": {
+      "timestamp_mismatch": "Consider using a consistent timestamp format across all systems.",
+      "id_type_mismatch": "Ensure IDs are consistently typed as integers or strings.",
+      "amount_format": "Standardize on cents (integers) or dollars (decimals) for all monetary values.",
+      "boolean_variant": "Use native boolean values (true/false) instead of strings or integers.",
+      "null_handling": "Be explicit about null vs empty string vs missing field semantics."
+    }
+  }
+}

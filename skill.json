@@ -1,0 +1,64 @@
+{
+  "name": "mcp-type-safety",
+  "version": "1.0.0",
+  "description": "Validates MCP tool call types before execution, preventing silent failures from type mismatches",
+  "author": "MCP Universal Protocol Team",
+  "license": "MIT",
+  "tags": [
+    "mcp",
+    "type-safety",
+    "validation",
+    "development",
+    "quality"
+  ],
+  "main": "SKILL.md",
+  "files": {
+    "skill_definition": "SKILL.md",
+    "validator": "validator.py",
+    "patterns": "patterns.json",
+    "examples": "examples/demo.md"
+  },
+  "capabilities": [
+    "pre-call-validation",
+    "post-call-validation",
+    "auto-fix",
+    "session-tracking",
+    "migration-scripts"
+  ],
+  "supported_patterns": [
+    "timestamp_mismatch",
+    "id_type_mismatch",
+    "amount_format",
+    "boolean_variant",
+    "null_handling"
+  ],
+  "commands": [
+    {
+      "name": "check types",
+      "description": "Validate arguments without calling"
+    },
+    {
+      "name": "type report",
+      "description": "Show session statistics"
+    },
+    {
+      "name": "auto-fix on",
+      "description": "Enable automatic type correction"
+    },
+    {
+      "name": "auto-fix off",
+      "description": "Disable auto-fix"
+    },
+    {
+      "name": "migration script",
+      "description": "Generate code to fix common issues"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ad8700/mcp-type-safety-skill.git"
+  },
+  "related": {
+    "mcp-universal-protocol": "https://github.com/ad8700/mcp-universal-protocol"
+  }
+}
