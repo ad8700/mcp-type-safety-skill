@@ -221,6 +221,38 @@ rm -rf /tmp/test-skill-install
    - ISO-8601 → Unix timestamp (for dates)
    - Boolean variants → native boolean
 
+5. **Timestamp Conversion Priority**: In `try_coerce()`, timestamp checks must happen BEFORE basic type conversion:
+   - Check ISO-8601 before `int()` for string→integer
+   - Check Unix timestamp before `str()` for integer→string
+   - This ensures `"2024-01-01T00:00:00Z"` converts to `1704067200`, not fails
+
+### Bug Fixes
+
+**ISO-8601 Timestamp Conversion (commit 020eeb4)**
+
+The `try_coerce()` function had a bug where timestamp conversions were never reached:
+
+```python
+# BEFORE (broken): int() tried first, returns early on failure
+if target_type == "integer" and actual_type == "string":
+    try:
+        coerced = int(value)  # Fails for "2024-01-01T00:00:00Z"
+        return True, coerced, ...
+    except ValueError:
+        return False, value, ...  # Early return, ISO-8601 check never reached
+
+# AFTER (fixed): Check ISO-8601 first
+if target_type == "integer" and actual_type == "string":
+    if looks_like_iso8601(value):  # Check timestamp FIRST
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return True, int(dt.timestamp()), ...
+    try:
+        coerced = int(value)  # Then try basic conversion
+        ...
+```
+
+Same fix applied for integer→string (Unix timestamp to ISO-8601).
+
 ### Origin and History
 
 This skill was extracted from `mcp-universal-protocol/skills/mcp-type-safety-skill/` into a standalone repository to:
