@@ -211,8 +211,17 @@ def try_coerce(value: Any, target_type: str) -> Tuple[bool, Any, str]:
     if actual_type == target_type:
         return True, value, "Types match"
 
-    # String to integer
+    # String to integer - check ISO-8601 FIRST before basic int()
     if target_type == "integer" and actual_type == "string":
+        # Check for ISO-8601 timestamp first
+        if looks_like_iso8601(value):
+            try:
+                dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                unix_ts = int(dt.timestamp())
+                return True, unix_ts, f"Convert ISO-8601 to Unix timestamp: {unix_ts}"
+            except ValueError:
+                pass
+        # Then try basic integer conversion
         try:
             coerced = int(value)
             return True, coerced, f'Convert string "{value}" to integer {coerced}'
@@ -238,11 +247,7 @@ def try_coerce(value: Any, target_type: str) -> Tuple[bool, Any, str]:
         if value in [0, "0", "false", "False", "no", "No"]:
             return True, False, f'Convert "{value}" to false'
 
-    # Integer to string
-    if target_type == "string" and actual_type in ["integer", "number"]:
-        return True, str(value), f"Convert {value} to string"
-
-    # Timestamp conversions
+    # Integer to string - check Unix timestamp FIRST before basic str()
     if target_type == "string" and actual_type == "integer":
         if looks_like_unix_timestamp(value):
             # Convert Unix timestamp to ISO-8601
@@ -250,15 +255,11 @@ def try_coerce(value: Any, target_type: str) -> Tuple[bool, Any, str]:
             dt = datetime.fromtimestamp(ts, tz=timezone.utc)
             iso_str = dt.isoformat().replace("+00:00", "Z")
             return True, iso_str, f"Convert Unix timestamp to ISO-8601: {iso_str}"
+        # Fall through to basic string conversion below
 
-    if target_type == "integer" and actual_type == "string":
-        if looks_like_iso8601(value):
-            try:
-                dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
-                unix_ts = int(dt.timestamp())
-                return True, unix_ts, f"Convert ISO-8601 to Unix timestamp: {unix_ts}"
-            except ValueError:
-                pass
+    # Number/Integer to string (basic conversion)
+    if target_type == "string" and actual_type in ["integer", "number"]:
+        return True, str(value), f"Convert {value} to string"
 
     return False, value, f"Cannot coerce {actual_type} to {target_type}"
 

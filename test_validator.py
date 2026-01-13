@@ -236,22 +236,23 @@ class TestTryCoerce:
         assert value == "123"
 
     def test_unix_to_iso8601(self):
-        """Note: integer-to-string conversion takes priority over timestamp detection"""
+        """Unix timestamps are converted to ISO-8601 when target is string"""
         success, value, msg = try_coerce(1704067200, "string")
         assert success is True
-        # Basic int-to-string conversion happens first
-        assert value == "1704067200"
+        assert "2024-01-01" in value
+        assert "T00:00:00" in value
 
-    def test_iso8601_to_unix_known_limitation(self):
-        """Known limitation: ISO-8601 to Unix conversion not reached due to early return
-
-        The string-to-integer conversion tries int() first and returns False on failure,
-        preventing the ISO-8601 conversion logic from being reached.
-        TODO: Fix validator to check ISO-8601 before basic int() conversion.
-        """
+    def test_iso8601_to_unix(self):
+        """ISO-8601 strings are converted to Unix timestamps when target is integer"""
         success, value, msg = try_coerce("2024-01-01T00:00:00Z", "integer")
-        # Currently fails because int() is tried first and returns early
-        assert success is False
+        assert success is True
+        assert value == 1704067200
+
+    def test_non_timestamp_integer_to_string(self):
+        """Regular integers (not timestamps) convert to plain strings"""
+        success, value, msg = try_coerce(123, "string")
+        assert success is True
+        assert value == "123"
 
 
 class TestValidateToolArguments:
@@ -333,13 +334,8 @@ class TestValidateToolArguments:
         report = validate_tool_arguments("test", {"value": 42}, schema)
         assert report.valid is True
 
-    def test_timestamp_detection_known_limitation(self):
-        """Known limitation: ISO-8601 string to integer conversion fails
-
-        Due to the early return in try_coerce, ISO-8601 strings are not
-        automatically converted to Unix timestamps.
-        TODO: Fix validator to check ISO-8601 before basic int() conversion.
-        """
+    def test_timestamp_detection(self):
+        """ISO-8601 strings are auto-converted to Unix timestamps"""
         schema = {
             "type": "object",
             "properties": {
@@ -351,9 +347,9 @@ class TestValidateToolArguments:
             {"created_at": "2024-01-01T00:00:00Z"},
             schema
         )
-        # Currently fails due to known limitation
-        assert report.valid is False
-        assert len(report.errors) == 1
+        assert report.valid is True
+        assert len(report.warnings) == 1
+        assert report.auto_fixes.get("created_at") == 1704067200
 
 
 class TestCheckResponseTypes:
