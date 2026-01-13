@@ -381,6 +381,16 @@ python -m pytest test_validator.py -v
 3. Add tests for new patterns
 4. Submit a pull request
 
+### Contributing Guidelines
+
+When contributing:
+- Never add telemetry or tracking
+- Never add external service dependencies
+- Keep all processing local
+- Respect user privacy absolutely
+
+Any PR adding phone-home features will be rejected.
+
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
