@@ -2,8 +2,13 @@
 name: mcp-type-safety
 description: Validates types when calling MCP servers and provides migration assistance
 version: 1.0.0
-tags: [mcp, type-safety, validation, development, quality]
 author: MCP Universal Protocol Team
+tags:
+  - mcp
+  - type-safety
+  - validation
+  - development
+  - quality
 ---
 
 # MCP Type Safety Skill
